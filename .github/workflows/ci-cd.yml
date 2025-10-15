@@ -7,6 +7,11 @@ on:
       - 'kubernetes/deployment.yaml'  # Ignore changes to this file to prevent loops
   pull_request:
     branches: [ main ]
+ 
+# Grant the workflow permissions needed to push container images to GHCR
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   test:
@@ -107,7 +112,9 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.TOKEN }}
+          # Use the built-in GITHUB_TOKEN which is available to workflows.
+          # The top-level `permissions: packages: write` is required so this token can push packages/images.
+          password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Extract metadata for Docker
         id: meta
@@ -170,8 +177,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        # Use the workflow token so the action can push commits back to the repo
         with:
-          token: ${{ secrets.TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Setup Git config
         run: |
